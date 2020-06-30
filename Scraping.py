@@ -5,6 +5,7 @@ from random import randint
 from IPython.core.display import clear_output
 import pandas as pd
 from warnings import warn
+import matplotlib.pyplot as plt
 
 
 # Variaveis
@@ -19,31 +20,19 @@ headers = {"Accept-Language": "en-US, en;q=0.5"}
 
 url = 'http://www.imdb.com/search/title?release_date=2017&sort=num_votes,desc&page=1'
 response = get(url)
+
 html_soup = BeautifulSoup(response.text, 'html.parser')
+
 movie_containers = html_soup.find_all('div', class_='lister-item mode-advanced')
 
 pages = [str(i) for i in range(1, 5)]
 years_url = [str(i) for i in range(2000, 2018)]
 
-
-for _ in range(5):
-    # A request would go here
-    requests += 1
-    sleep(randint(1, 3))# simula um usuario
-    elapsed_time = time() - start_time
-    clear_output(wait=True)
-    print('Request: {}; Frequency: {} requests/s'.format(requests, requests / elapsed_time))
-
 for year_url in years_url:
-    # For every page in the interval 1-4
     for page in pages:
-        # Make a get request
         response = get('http://www.imdb.com/search/title?release_date=' + year_url +
                        '&sort=num_votes,desc&page=' + page, headers=headers)
-        # Pause the loop
         sleep(randint(8, 15))
-
-        # Monitor the requests
         requests += 1
         elapsed_time = time() - start_time
         print('Request:{}; Frequency: {} requests/s'.format(requests, requests / elapsed_time))
@@ -95,10 +84,29 @@ print(movie_ratings.head(10))
 
 movie_ratings = movie_ratings[['movie', 'year', 'imdb', 'metascore', 'votes']]
 print(movie_ratings.head())
+# visto como esta a estrura trazida no dataset para poder pegar apenas o ano e converter para inteiro.
 movie_ratings['year'].unique()
 movie_ratings.loc[:, 'year'] = movie_ratings['year'].str[-5:-1].astype(int)
+
 print(movie_ratings['year'].head(3))
 movie_ratings.describe().loc[['min', 'max'], ['imdb', 'metascore']]
 movie_ratings['n_imdb'] = movie_ratings['imdb'] * 10
 print(movie_ratings.head(3))
+
 movie_ratings.to_csv('movie_ratings.csv')
+
+
+fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(16, 4))
+ax1, ax2, ax3 = fig.axes
+ax1.hist(movie_ratings['imdb'], bins=10, range=(0, 10))# bin range = 1
+ax1.set_title('IMDB rating')
+ax2.hist(movie_ratings['metascore'], bins=10, range=(0, 100))# bin range = 10
+ax2.set_title('Metascore')
+ax3.hist(movie_ratings['n_imdb'], bins=10, range=(0, 100), histtype='step')
+ax3.hist(movie_ratings['metascore'], bins=10, range=(0, 100), histtype='step')
+ax3.legend(loc='upper left')
+ax3.set_title('The Two Normalized Distributions')
+for ax in fig.axes:
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+plt.show()
